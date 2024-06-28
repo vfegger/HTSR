@@ -1,0 +1,4 @@
+[deps]
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
+SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
