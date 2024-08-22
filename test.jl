@@ -27,20 +27,15 @@ const ncpi::Integer = 32
 const niter::Integer = 64
 const complexity::Integer = 20
 
-const var1 = (variables=[:Re :Pr], sampler=Dict([p1[1] => Uniform(1.0e2, 5.0e5), p1[2] => Uniform(0.5, 100.0)]), op=((Re::Number, Pr::Number) -> 0.663 * Re^(1.0 / 2.0) * Pr^(1.0 / 3.0)))
-const var2 = (variables=[:Ra :Pr], sampler=Dict([p2[1] => Uniform(1.0e2, 1.0e8), p2[2] => Uniform(0.5, 100.0)]), op=((Ra::Number, Pr::Number) -> 0.677 * ((20.0 / (21.0 * Pr)) + 1.0)^(-0.25) * Ra^(0.25)))
-const var3 = (variables=[:ϵ :NTU], sampler=nothing, op=nothing)
-
-function sample!(X, sampler)
-    @assert size(X, 1) == length(sampler)
-    for (i, s) ∈ sampler
-        rand!(s, @view(x[i, :]))
-    end
-end
+const var1 = (variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0e2, 5.0e5), :Pr => Uniform(0.5, 100.0)]), op=((Re::Number, Pr::Number) -> 0.663 * Re^(1.0 / 2.0) * Pr^(1.0 / 3.0)))
+const var2 = (variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0e2, 1.0e8), :Pr => Uniform(0.5, 100.0)]), op=((Ra::Number, Pr::Number) -> 0.677 * ((20.0 / (21.0 * Pr)) + 1.0)^(-0.25) * Ra^(0.25)))
+const var3 = (variables=Dict(reverse.(enumerate([:ϵ :NTU]))), sampler=nothing, op=nothing)
 
 function case(var, n::Integer)
     X = Array{Float64,2}(undef, length(var.variables), n)
-    sample!(X, var.sampler)
+    for (symbol, distribution) ∈ var.sampler
+        rand!(distribution, @view(X[var.variables[symbol], :]))
+    end
 
     y = var.op.(eachrow(X)...)
 
@@ -77,14 +72,14 @@ function SampleRun(input)
     for i in 0:nsamples-1
         n = scale * growth^i
 
-        data = @btime case(input, n)
+        data = case(input, n)
 
         trees, complexity = calculateSR(data, niter, options)
 
         push!(plotdata, (trees=trees, complexity=complexity, label="N=$n"))
     end
 
-    data = @btime case(input, ntest)
+    data = case(input, ntest)
 
     return plotSampleDep(plotdata, data, options)
 end
