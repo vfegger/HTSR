@@ -24,6 +24,7 @@ const growth::Integer = 2
 const nsamples::Integer = 8
 const ntest::Integer = 100000
 const ncpi::Integer = 32
+const niter::Integer = 64
 const complexity::Integer = 20
 
 const var1 = (variables=[:Re :Pr], sampler=Dict([p1[1] => Uniform(1.0e2, 5.0e5), p1[2] => Uniform(0.5, 100.0)]), op=((Re::Number, Pr::Number) -> 0.663 * Re^(1.0 / 2.0) * Pr^(1.0 / 3.0)))
@@ -78,7 +79,7 @@ function SampleRun(input)
 
         data = @btime case(input, n)
 
-        trees, complexity = calculateSR(data, 30, options)
+        trees, complexity = calculateSR(data, niter, options)
 
         push!(plotdata, (trees=trees, complexity=complexity, label="N=$n"))
     end
@@ -129,15 +130,15 @@ data2_10.y .= (1.0 .+ 0.1 .* noise .* data2_10.y) .* data2_10.y
 #data3_1.y .= (1.0 .+ 0.01 .* noise .* data3_1.y) .* data3_1.y
 #data3_10.y .= (1.0 .+ 0.1 .* noise .* data3_10.y) .* data3_10.y
 
-trees1, complexity1 = calculateSR(data1, 1000, options)
-trees2, complexity2 = calculateSR(data2, 1000, options)
-#trees3, complexity3 = calculateSR(data3, 1000, options)
-trees1_1, complexity1_1 = calculateSR(data1_1, 1000, options)
-trees2_1, complexity2_1 = calculateSR(data2_1, 1000, options)
-#trees3_1, complexity3_1 = calculateSR(data3_1, 1000, options)
-trees1_10, complexity1_10 = calculateSR(data1_10, 1000, options)
-trees2_10, complexity2_10 = calculateSR(data2_10, 1000, options)
-#trees3_10, complexity3_10 = calculateSR(data3_10, 1000, options)
+trees1, complexity1 = calculateSR(data1, niter, options)
+trees2, complexity2 = calculateSR(data2, niter, options)
+#trees3, complexity3 = calculateSR(data3, niter, options)
+trees1_1, complexity1_1 = calculateSR(data1_1, niter, options)
+trees2_1, complexity2_1 = calculateSR(data2_1, niter, options)
+#trees3_1, complexity3_1 = calculateSR(data3_1, niter, options)
+trees1_10, complexity1_10 = calculateSR(data1_10, niter, options)
+trees2_10, complexity2_10 = calculateSR(data2_10, niter, options)
+#trees3_10, complexity3_10 = calculateSR(data3_10, niter, options)
 
 sets1 = [(data=data1, trees=trees1, complexity=complexity1, label="Exact"), (data=data1_1, trees=trees1_1, complexity=complexity1_1, label="1% Noise"), (data=data1_10, trees=trees1_10, complexity=complexity1_10, label="10% Noise")]
 sets2 = [(data=data2, trees=trees2, complexity=complexity2, label="Exact"), (data=data2_1, trees=trees2_1, complexity=complexity2_1, label="1% Noise"), (data=data2_10, trees=trees2_10, complexity=complexity2_10, label="10% Noise")]
