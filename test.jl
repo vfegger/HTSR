@@ -84,10 +84,10 @@ function SampleRun(input)
     return plotSampleDep(plotdata, data, options)
 end
 
-pSample1_losses = SampleRun(case1)
+pSample1_losses = SampleRun(var1)
 savefig(pSample1_losses, "Images/sample_losses_case1.pdf")
 
-pSample2_losses = SampleRun(case2)
+pSample2_losses = SampleRun(var2)
 savefig(pSample2_losses, "Images/sample_losses_case2.pdf")
 
 exit()
