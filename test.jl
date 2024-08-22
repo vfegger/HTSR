@@ -50,7 +50,7 @@ function plotSampleDep(sets, data, options)
     plt = plot(title="Loss over Complexity", dp=1000)
     for set in sets
         residuals = [sum(abs2, eval_tree_array(tree, data.X, options)[1] - data.y) for tree in set.trees]
-        num_points = length(dataX)
+        num_points = length(data.y)
         loss = log10.(residuals ./ num_points)
         plot!(set.complexity, loss, label=set.label, xlabel="Complexity [-]", ylabel="Log Loss [-]")
     end
