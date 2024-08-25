@@ -19,7 +19,9 @@ using Glob
 using JLD2
 using BenchmarkTools
 
-Random.seed!(1234)
+const rseed::Integer = 1234
+
+Random.seed!(rseed)
 
 const scale::Integer = 100
 const growth::Integer = 2
@@ -100,7 +102,8 @@ function sampleRun(input)
         unary_operators=(inv, -),
         batching=true,
         ncyclesperiteration=ncpi,
-        maxsize=complexity
+        maxsize=complexity,
+        seed=rseed
     )
     for i in 0:nsamples-1
         n = scale * growth^i
@@ -148,7 +151,8 @@ function noiseRun(input, n::Integer)
         unary_operators=(inv, -),
         batching=true,
         ncyclesperiteration=ncpi,
-        maxsize=complexity
+        maxsize=complexity,
+        seed=rseed
     )
 
     data = loadData(input, n, dataPath, "")
