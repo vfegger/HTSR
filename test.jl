@@ -15,6 +15,8 @@ using .HTSR
 using Plots
 using LaTeXStrings
 
+using Glob
+using JLD2
 using BenchmarkTools
 
 Random.seed!(1234)
@@ -23,16 +25,23 @@ const scale::Integer = 100
 const growth::Integer = 2
 const nsamples::Integer = 8
 const ntest::Integer = 100000
-const ncpi::Integer = 32
-const niter::Integer = 64
+const ncpi::Integer = 1024
+const niter::Integer = 1024
 const complexity::Integer = 20
+const ndata::Integer = 6400
 
-const var1 = (variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0e2, 5.0e5), :Pr => Uniform(0.5, 100.0)]), op=((Re::Number, Pr::Number) -> 0.663 * Re^(1.0 / 2.0) * Pr^(1.0 / 3.0)))
-const var2 = (variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0e2, 1.0e8), :Pr => Uniform(0.5, 100.0)]), op=((Ra::Number, Pr::Number) -> 0.677 * ((20.0 / (21.0 * Pr)) + 1.0)^(-0.25) * Ra^(0.25)))
-const var3 = (variables=Dict(reverse.(enumerate([:ϵ :NTU]))), sampler=nothing, op=nothing)
+const dataPath = "Data/"
+
+const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0f2, 5.0f5), :Pr => Uniform(0.5f0, 100.0f0)]), op=((Re::Number, Pr::Number) -> 0.663f0 * convert(Float32, Re)^(1.0f0 / 2.0f0) * convert(Float32, Pr)^(1.0f0 / 3.0f0)))
+const var2 = (name="Case2", variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0f2, 1.0f8), :Pr => Uniform(0.5f0, 100.0f0)]), op=((Ra::Number, Pr::Number) -> 0.677f0 * ((20.0f0 / (21.0f0 * convert(Float32, Pr))) + 1.0f0)^(-0.25f0) * convert(Float32, Ra)^(0.25f0)))
+const var3 = (name="Case3", variables=Dict(reverse.(enumerate([:ϵ :NTU]))), sampler=nothing, op=nothing)
+
+fileNames = vcat(glob("*.jdl", "./Data/"), glob("*.pdf", "./Images/"))
+foreach(rm,fileNames)
+fileNames=nothing
 
 function case(var, n::Integer)
-    X = Array{Float64,2}(undef, length(var.variables), n)
+    X = Array{Float32,2}(undef, length(var.variables), n)
     for (symbol, distribution) ∈ var.sampler
         rand!(distribution, @view(X[var.variables[symbol], :]))
     end
@@ -40,6 +49,30 @@ function case(var, n::Integer)
     y = var.op.(eachrow(X)...)
 
     return Data(X, y)
+end
+
+function format(path, name, n, suffix)
+    return path * name * "_" * string(n) * suffix * ".jdl"
+end
+
+function generateData(var, n::Integer, path, suffix)
+    data = case(var, n)
+    save_object(format(path, var.name, n, suffix), data)
+end
+
+function loadData(var, n::Integer, path, suffix)
+    fileName = format(path, var.name, n, suffix)
+    if !isfile(fileName)
+        generateData(var, n, path, suffix)
+    end
+    return load_object(fileName)
+end
+
+function saveTrees(var, trees, n::Integer, path, suffix="")
+    save_object(format(path, var.name, n, "Trees" * suffix), trees)
+end
+function loadTrees(var, n::Integer, path, suffix="")
+    return load_object(format(path, var.name, n, "Trees" * suffix))
 end
 
 # Sample Dependency
@@ -57,7 +90,7 @@ function plotSampleDep(sets, data, options)
     return plt
 end
 
-function SampleRun(input)
+function sampleRun(input)
 
     plotdata = []
 
@@ -72,115 +105,87 @@ function SampleRun(input)
     for i in 0:nsamples-1
         n = scale * growth^i
 
-        data = case(input, n)
+        data = loadData(input, n, dataPath, "")
 
         trees, complexity = calculateSR(data, niter, options)
+
+        saveTrees(input, (trees, complexity), n, dataPath)
 
         push!(plotdata, (trees=trees, complexity=complexity, label="N=$n"))
     end
 
-    data = case(input, ntest)
+    data = loadData(input, ntest, dataPath, "Test")
 
     return plotSampleDep(plotdata, data, options)
 end
 
-pSample1_losses = SampleRun(var1)
+pSample1_losses = sampleRun(var1)
 savefig(pSample1_losses, "Images/sample_losses_case1.pdf")
 
-pSample2_losses = SampleRun(var2)
+pSample2_losses = sampleRun(var2)
 savefig(pSample2_losses, "Images/sample_losses_case2.pdf")
-
-exit()
 
 # Noise Robust Test
 
-data1 = case(var1, 100)
-data2 = case(var2, 100)
-#data3 = case3(var3, 100)
-
-inv(x) = 1 / x
-options = Options(
-    binary_operators=(+, *, ^),
-    unary_operators=(inv, -),
-    batching=true,
-    ncyclesperiteration=ncpi,
-    maxsize=complexity
-)
-
-data1_1 = deepcopy(data1)
-data1_10 = deepcopy(data1)
-noise = randn(length(data1.y))
-data1_1.y .= (1.0 .+ 0.01 .* noise .* data1_1.y) .* data1_1.y
-data1_10.y .= (1.0 .+ 0.1 .* noise .* data1_10.y) .* data1_10.y
-
-data2_1 = deepcopy(data2)
-data2_10 = deepcopy(data2)
-noise = randn(length(data2.y))
-data2_1.y .= (1.0 .+ 0.01 .* noise .* data2_1.y) .* data2_1.y
-data2_10.y .= (1.0 .+ 0.1 .* noise .* data2_10.y) .* data2_10.y
-
-#data3_1 = deepcopy(data3)
-#data3_10 = deepcopy(data3)
-#noise = randn(length(data3.y))
-#data3_1.y .= (1.0 .+ 0.01 .* noise .* data3_1.y) .* data3_1.y
-#data3_10.y .= (1.0 .+ 0.1 .* noise .* data3_10.y) .* data3_10.y
-
-trees1, complexity1 = calculateSR(data1, niter, options)
-trees2, complexity2 = calculateSR(data2, niter, options)
-#trees3, complexity3 = calculateSR(data3, niter, options)
-trees1_1, complexity1_1 = calculateSR(data1_1, niter, options)
-trees2_1, complexity2_1 = calculateSR(data2_1, niter, options)
-#trees3_1, complexity3_1 = calculateSR(data3_1, niter, options)
-trees1_10, complexity1_10 = calculateSR(data1_10, niter, options)
-trees2_10, complexity2_10 = calculateSR(data2_10, niter, options)
-#trees3_10, complexity3_10 = calculateSR(data3_10, niter, options)
-
-sets1 = [(data=data1, trees=trees1, complexity=complexity1, label="Exact"), (data=data1_1, trees=trees1_1, complexity=complexity1_1, label="1% Noise"), (data=data1_10, trees=trees1_10, complexity=complexity1_10, label="10% Noise")]
-sets2 = [(data=data2, trees=trees2, complexity=complexity2, label="Exact"), (data=data2_1, trees=trees2_1, complexity=complexity2_1, label="1% Noise"), (data=data2_10, trees=trees2_10, complexity=complexity2_10, label="10% Noise")]
-#sets3 = [(data=data3, trees=trees3, complexity=complexity3, label="Exact"), (data=data3_1, trees=trees3_1, complexity=complexity3_1, label="1% Noise"), (data=data3_10, trees=trees3_10, complexity=complexity3_10, label="10% Noise")]
-
-
-function plotcase(sets)
-    losses = []
+function plotNoiseDep(sets, data, options)
     plot_font = "Computer Modern"
     default(fontfamily=plot_font)
     plt = plot(title="Loss over Complexity", dp=1000)
     for set in sets
-        values = [eval_tree_array(tree, set.data.X, options)[1] for tree in set.trees]
-        residuals = values
-        for residual in residuals
-            residual .= residual - first(sets).data.y
-        end
-        loss = log10.([sum(abs2, residual) / length(residual) for residual in residuals])
-        push!(losses, loss)
-        plot!(set.complexity, loss, label=set.label, xlabel="Complexity", ylabel="Loss")
+        residuals = [sum(abs2, eval_tree_array(tree, data.X, options)[1] - data.y) for tree in set.trees]
+        num_points = length(data.y)
+        loss = log10.(residuals ./ num_points)
+        plot!(set.complexity, loss, label=set.label, xlabel="Complexity [-]", ylabel="Log Loss [-]")
     end
     return plt
 end
 
-p1_losses = plotcase(sets1)
-p2_losses = plotcase(sets2)
-#p3_losses = plotcase(sets3)
+function noiseRun(input, n::Integer)
 
-savefig(p1_losses, "Images/losses_case1.pdf")
-savefig(p2_losses, "Images/losses_case2.pdf")
-#savefig(p3_losses, "Images/losses_case3.pdf")
+    inv(x) = 1 / x
+    options = Options(
+        binary_operators=(+, *, ^),
+        unary_operators=(inv, -),
+        batching=true,
+        ncyclesperiteration=ncpi,
+        maxsize=complexity
+    )
 
-open("result.txt", "a") do io
-    println(io, "Case 1:")
-    for set in sets1
-        println(io, node_to_symbolic(set.trees[end], options))
-    end
-    println(io)
+    data = loadData(input, n, dataPath, "")
+    dataTest = loadData(input, ntest, dataPath, "Test")
+    data_noise_1 = deepcopy(data)
+    data_noise_01 = deepcopy(data)
+    data_noise_001 = deepcopy(data)
 
-    println(io, "Case 2:")
-    for set in sets2
-        println(io, node_to_symbolic(set.trees[end], options))
-    end
-    println(io)
+    data_noise_1.y .+= 0.01 .* data_noise_1.y .* randn(size(data_noise_1.y))
+    data_noise_01.y .+= 0.001 .* data_noise_01.y .* randn(size(data_noise_01.y))
+    data_noise_001.y .+= 0.0001 .* data_noise_001.y .* randn(size(data_noise_001.y))
 
-    #println("Case 3:")
-    #for set in sets3
-    #    println(io, node_to_symbolic(set.trees[end], options))
-    #end
+    trees_exact, complexity_exact = calculateSR(data, niter, options)
+    trees_noise_1, complexity_noise_1 = calculateSR(data_noise_1, niter, options)
+    trees_noise_01, complexity_noise_01 = calculateSR(data_noise_01, niter, options)
+    trees_noise_001, complexity_noise_001 = calculateSR(data_noise_001, niter, options)
+
+    saveTrees(input, (trees_exact, complexity_exact), n, dataPath)
+    saveTrees(input, (trees_noise_1, complexity_noise_1), n, dataPath)
+    saveTrees(input, (trees_noise_01, complexity_noise_01), n, dataPath)
+    saveTrees(input, (trees_noise_001, complexity_noise_001), n, dataPath)
+
+    return plotNoiseDep([
+            (trees=trees_exact, complexity=complexity_exact, label="Exact"),
+            (trees=trees_noise_1, complexity=complexity_noise_1, label="Noise = 1%"),
+            (trees=trees_noise_01, complexity=complexity_noise_01, label="Noise = 0.1%"),
+            (trees=trees_noise_001, complexity=complexity_noise_001, label="Noise = 0.01%"),
+        ], dataTest, options)
 end
+
+pNoise1_losses = noiseRun(var1, ndata)
+savefig(pNoise1_losses, "Images/losses_case1.pdf")
+pNoise2_losses = noiseRun(var2, ndata)
+savefig(pNoise2_losses, "Images/losses_case2.pdf")
+
+fileNames = glob("hall_of_fame*")
+foreach(rm,fileNames)
+fileNames=nothing
+
+exit(0)
