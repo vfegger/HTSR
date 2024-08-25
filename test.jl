@@ -20,30 +20,40 @@ using JLD2
 using BenchmarkTools
 
 const rseed::Integer = 1234
-
 Random.seed!(rseed)
 
 const scale::Integer = 100
 const growth::Integer = 2
 const nsamples::Integer = 8
 const ntest::Integer = 100000
-const ncpi::Integer = 1024
+const ncpi::Integer = 516
 const niter::Integer = 1024
 const complexity::Integer = 20
 const ndata::Integer = 6400
 
 const dataPath = "Data/"
 
-const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0f2, 5.0f5), :Pr => Uniform(0.5f0, 100.0f0)]), op=((Re::Number, Pr::Number) -> 0.663f0 * convert(Float32, Re)^(1.0f0 / 2.0f0) * convert(Float32, Pr)^(1.0f0 / 3.0f0)))
-const var2 = (name="Case2", variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0f2, 1.0f8), :Pr => Uniform(0.5f0, 100.0f0)]), op=((Ra::Number, Pr::Number) -> 0.677f0 * ((20.0f0 / (21.0f0 * convert(Float32, Pr))) + 1.0f0)^(-0.25f0) * convert(Float32, Ra)^(0.25f0)))
+const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0e2, 5.0e5), :Pr => Uniform(0.5e0, 100.0e0)]), op=((Re::Number, Pr::Number) -> 0.663e0 * Re^(1.0e0 / 2.0e0) * Pr^(1.0f0 / 3.0f0)))
+const var2 = (name="Case2", variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0e2, 1.0e8), :Pr => Uniform(0.5e0, 100.0e0)]), op=((Ra::Number, Pr::Number) -> 0.677e0 * ((2.0e1 / (2.1e1 * Pr)) + 1.0e0)^(-1.0e0 / 4.0e0) * Ra^(1.0e0 / 4.0e0)))
 const var3 = (name="Case3", variables=Dict(reverse.(enumerate([:ϵ :NTU]))), sampler=nothing, op=nothing)
 
 fileNames = vcat(glob("*.jdl", "./Data/"), glob("*.pdf", "./Images/"))
-foreach(rm,fileNames)
-fileNames=nothing
+foreach(rm, fileNames)
+fileNames = nothing
+
+inv(x) = 1 / x
+options = Options(
+    binary_operators=(+, *, ^),
+    unary_operators=(inv, -),
+    batching=true,
+    ncyclesperiteration=ncpi,
+    maxsize=complexity,
+    populations=50,
+    population_size=75
+)
 
 function case(var, n::Integer)
-    X = Array{Float32,2}(undef, length(var.variables), n)
+    X = Array{Float64,2}(undef, length(var.variables), n)
     for (symbol, distribution) ∈ var.sampler
         rand!(distribution, @view(X[var.variables[symbol], :]))
     end
@@ -92,19 +102,10 @@ function plotSampleDep(sets, data, options)
     return plt
 end
 
-function sampleRun(input)
+function sampleRun(input, options)
 
     plotdata = []
 
-    inv(x) = 1 / x
-    options = Options(
-        binary_operators=(+, *, ^),
-        unary_operators=(inv, -),
-        batching=true,
-        ncyclesperiteration=ncpi,
-        maxsize=complexity,
-        seed=rseed
-    )
     for i in 0:nsamples-1
         n = scale * growth^i
 
@@ -122,10 +123,10 @@ function sampleRun(input)
     return plotSampleDep(plotdata, data, options)
 end
 
-pSample1_losses = sampleRun(var1)
+pSample1_losses = sampleRun(var1, options)
 savefig(pSample1_losses, "Images/sample_losses_case1.pdf")
 
-pSample2_losses = sampleRun(var2)
+pSample2_losses = sampleRun(var2, options)
 savefig(pSample2_losses, "Images/sample_losses_case2.pdf")
 
 # Noise Robust Test
@@ -143,17 +144,7 @@ function plotNoiseDep(sets, data, options)
     return plt
 end
 
-function noiseRun(input, n::Integer)
-
-    inv(x) = 1 / x
-    options = Options(
-        binary_operators=(+, *, ^),
-        unary_operators=(inv, -),
-        batching=true,
-        ncyclesperiteration=ncpi,
-        maxsize=complexity,
-        seed=rseed
-    )
+function noiseRun(input, n::Integer, options)
 
     data = loadData(input, n, dataPath, "")
     dataTest = loadData(input, ntest, dataPath, "Test")
@@ -183,13 +174,13 @@ function noiseRun(input, n::Integer)
         ], dataTest, options)
 end
 
-pNoise1_losses = noiseRun(var1, ndata)
+pNoise1_losses = noiseRun(var1, ndata, options)
 savefig(pNoise1_losses, "Images/losses_case1.pdf")
-pNoise2_losses = noiseRun(var2, ndata)
+pNoise2_losses = noiseRun(var2, ndata, options)
 savefig(pNoise2_losses, "Images/losses_case2.pdf")
 
 fileNames = glob("hall_of_fame*")
-foreach(rm,fileNames)
-fileNames=nothing
+foreach(rm, fileNames)
+fileNames = nothing
 
 exit(0)
