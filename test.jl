@@ -123,7 +123,7 @@ function sampleRun(input, options)
 
     for i in 0:nsamples-1
         n = scale * growth^i
-        println("Step Samples =" * string(n))
+        println("Step Samples = " * string(n))
 
         if !existTrees(input, n, dataPath)
             data = loadData(input, n, dataPath, "")
@@ -166,25 +166,32 @@ end
 
 function noiseRun(input, n::Integer, options)
 
-    data = loadData(input, n, dataPath, "")
-    dataTest = loadData(input, ntest, dataPath, "Test")
-    data_noise_1 = deepcopy(data)
-    data_noise_01 = deepcopy(data)
-    data_noise_001 = deepcopy(data)
+    if existTrees(input, n, dataPath, "Exact") && existTrees(input, n, dataPath, "Noise1") && existTrees(input, n, dataPath, "Noise01") && existTrees(input, n, dataPath, "Noise001")
+        data = loadData(input, n, dataPath, "")
+        dataTest = loadData(input, ntest, dataPath, "Test")
+        data_noise_1 = deepcopy(data)
+        data_noise_01 = deepcopy(data)
+        data_noise_001 = deepcopy(data)
 
-    data_noise_1.y .+= 0.01 .* data_noise_1.y .* randn(size(data_noise_1.y))
-    data_noise_01.y .+= 0.001 .* data_noise_01.y .* randn(size(data_noise_01.y))
-    data_noise_001.y .+= 0.0001 .* data_noise_001.y .* randn(size(data_noise_001.y))
+        data_noise_1.y .+= 0.01 .* data_noise_1.y .* randn(size(data_noise_1.y))
+        data_noise_01.y .+= 0.001 .* data_noise_01.y .* randn(size(data_noise_01.y))
+        data_noise_001.y .+= 0.0001 .* data_noise_001.y .* randn(size(data_noise_001.y))
 
-    trees_exact, complexity_exact = calculateSR(data, niter, options)
-    trees_noise_1, complexity_noise_1 = calculateSR(data_noise_1, niter, options)
-    trees_noise_01, complexity_noise_01 = calculateSR(data_noise_01, niter, options)
-    trees_noise_001, complexity_noise_001 = calculateSR(data_noise_001, niter, options)
+        trees_exact, complexity_exact = calculateSR(data, niter, options)
+        trees_noise_1, complexity_noise_1 = calculateSR(data_noise_1, niter, options)
+        trees_noise_01, complexity_noise_01 = calculateSR(data_noise_01, niter, options)
+        trees_noise_001, complexity_noise_001 = calculateSR(data_noise_001, niter, options)
 
-    saveTrees(input, (trees_exact, complexity_exact), n, dataPath, "Exact")
-    saveTrees(input, (trees_noise_1, complexity_noise_1), n, dataPath, "Noise1")
-    saveTrees(input, (trees_noise_01, complexity_noise_01), n, dataPath, "Noise01")
-    saveTrees(input, (trees_noise_001, complexity_noise_001), n, dataPath, "Noise001")
+        saveTrees(input, (trees_exact, complexity_exact), n, dataPath, "Exact")
+        saveTrees(input, (trees_noise_1, complexity_noise_1), n, dataPath, "Noise1")
+        saveTrees(input, (trees_noise_01, complexity_noise_01), n, dataPath, "Noise01")
+        saveTrees(input, (trees_noise_001, complexity_noise_001), n, dataPath, "Noise001")
+    end
+
+    trees_exact, complexity_exact = loadTrees(input, n, dataPath, "Exact")
+    trees_noise_1, complexity_noise_1 = loadTrees(input, n, dataPath, "Noise1")
+    trees_noise_01, complexity_noise_01 = loadTrees(input, n, dataPath, "Noise01")
+    trees_noise_001, complexity_noise_001 = loadTrees(input, n, dataPath, "Noise001")
 
     return plotNoiseDep([
             (trees=trees_exact, complexity=complexity_exact, label="Exact"),
