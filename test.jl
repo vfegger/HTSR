@@ -3,6 +3,7 @@ println(pwd());
 
 using Pkg;
 Pkg.activate(pwd());
+Pkg.instantiate();
 
 include("HTSR.jl");
 
@@ -19,6 +20,8 @@ using Glob
 using JLD2
 using BenchmarkTools
 
+clean = false
+
 const rseed::Integer = 1234
 Random.seed!(rseed)
 
@@ -32,15 +35,24 @@ const complexity::Integer = 20
 const ndata::Integer = 6400
 
 const dataPath = "Data/"
+const imagePath = "Images/"
+
+if !isdir(dataPath)
+    mkdir(dataPath)
+end
+if !isdir(imagePath)
+    mkdir(imagePath)
+end
 
 const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0e2, 5.0e5), :Pr => Uniform(0.5e0, 100.0e0)]), op=((Re::Number, Pr::Number) -> 0.663e0 * Re^(1.0e0 / 2.0e0) * Pr^(1.0f0 / 3.0f0)))
 const var2 = (name="Case2", variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0e2, 1.0e8), :Pr => Uniform(0.5e0, 100.0e0)]), op=((Ra::Number, Pr::Number) -> 0.677e0 * ((2.0e1 / (2.1e1 * Pr)) + 1.0e0)^(-1.0e0 / 4.0e0) * Ra^(1.0e0 / 4.0e0)))
 const var3 = (name="Case3", variables=Dict(reverse.(enumerate([:ϵ :NTU]))), sampler=nothing, op=nothing)
 
-fileNames = vcat(glob("*.jdl", "./Data/"), glob("*.pdf", "./Images/"))
-foreach(rm, fileNames)
-fileNames = nothing
-
+if clean == true
+    fileNames = vcat(glob("*.jdl", "./Data/"), glob("*.pdf", "./Images/"))
+    foreach(rm, fileNames)
+    fileNames = nothing
+end
 inv(x) = 1 / x
 options = Options(
     binary_operators=(+, *, ^),
@@ -86,6 +98,9 @@ end
 function loadTrees(var, n::Integer, path, suffix="")
     return load_object(format(path, var.name, n, "Trees" * suffix))
 end
+function existTrees(var, n::Integer, path, suffix="")
+    return isfile(format(path, var.name, n, "Trees" * suffix))
+end
 
 # Sample Dependency
 
@@ -108,12 +123,17 @@ function sampleRun(input, options)
 
     for i in 0:nsamples-1
         n = scale * growth^i
+        println("Step Samples =" * string(n))
 
-        data = loadData(input, n, dataPath, "")
+        if !existTrees(var, n, dataPath)
+            data = loadData(input, n, dataPath, "")
 
-        trees, complexity = calculateSR(data, niter, options)
+            trees, complexity = calculateSR(data, niter, options)
 
-        saveTrees(input, (trees, complexity), n, dataPath)
+            saveTrees(input, (trees, complexity), n, dataPath)
+        end
+
+        trees, complexity = loadTrees(var, n, dataPath)
 
         push!(plotdata, (trees=trees, complexity=complexity, label="N=$n"))
     end
@@ -161,10 +181,10 @@ function noiseRun(input, n::Integer, options)
     trees_noise_01, complexity_noise_01 = calculateSR(data_noise_01, niter, options)
     trees_noise_001, complexity_noise_001 = calculateSR(data_noise_001, niter, options)
 
-    saveTrees(input, (trees_exact, complexity_exact), n, dataPath)
-    saveTrees(input, (trees_noise_1, complexity_noise_1), n, dataPath)
-    saveTrees(input, (trees_noise_01, complexity_noise_01), n, dataPath)
-    saveTrees(input, (trees_noise_001, complexity_noise_001), n, dataPath)
+    saveTrees(input, (trees_exact, complexity_exact), n, dataPath, "Exact")
+    saveTrees(input, (trees_noise_1, complexity_noise_1), n, dataPath, "Noise1")
+    saveTrees(input, (trees_noise_01, complexity_noise_01), n, dataPath, "Noise01")
+    saveTrees(input, (trees_noise_001, complexity_noise_001), n, dataPath, "Noise001")
 
     return plotNoiseDep([
             (trees=trees_exact, complexity=complexity_exact, label="Exact"),
