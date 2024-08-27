@@ -125,7 +125,7 @@ function sampleRun(input, options)
         n = scale * growth^i
         println("Step Samples =" * string(n))
 
-        if !existTrees(var, n, dataPath)
+        if !existTrees(input, n, dataPath)
             data = loadData(input, n, dataPath, "")
 
             trees, complexity = calculateSR(data, niter, options)
@@ -133,7 +133,7 @@ function sampleRun(input, options)
             saveTrees(input, (trees, complexity), n, dataPath)
         end
 
-        trees, complexity = loadTrees(var, n, dataPath)
+        trees, complexity = loadTrees(input, n, dataPath)
 
         push!(plotdata, (trees=trees, complexity=complexity, label="N=$n"))
     end
