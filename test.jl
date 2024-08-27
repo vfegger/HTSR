@@ -48,7 +48,7 @@ const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), samp
 const var2 = (name="Case2", variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0e2, 1.0e8), :Pr => Uniform(0.5e0, 100.0e0)]), op=((Ra::Number, Pr::Number) -> 0.677e0 * ((2.0e1 / (2.1e1 * Pr)) + 1.0e0)^(-1.0e0 / 4.0e0) * Ra^(1.0e0 / 4.0e0)))
 const var3 = (name="Case3", variables=Dict(reverse.(enumerate([:ϵ :NTU]))), sampler=nothing, op=nothing)
 
-if clean == true
+if clean
     fileNames = vcat(glob("*.jdl", "./Data/"), glob("*.pdf", "./Images/"))
     foreach(rm, fileNames)
     fileNames = nothing
