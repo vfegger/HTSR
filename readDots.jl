@@ -41,18 +41,49 @@ for i ∈ 1:nTest
     dotsY_test[i] = parse(Float64, dotsLines[i+offset][end])
 end
 
-pScatter = plot(title="Effectiveness-NTU", dp=1000)
+function plotScatter(name, index, X, Y, X_T, Y_T)
+    pScatter = plot(title="Effectiveness-" * name, dp=1000)
 
-scatter!(dotsX[end, :], dotsY, label="Train Data", xlabel="NTU [-]", ylabel="Effectiveness [-]", markersize=2)
-scatter!(dotsX_test[end, :], dotsY_test, label="Test Data", xlabel="NTU [-]", ylabel="Effectiveness [-]", markersize=2)
+    scatter!(X[index, :], Y, label="Train Data", xlabel=name * " [-]", ylabel="Effectiveness [-]", markersize=2)
+    scatter!(X_T[index, :], Y_T, label="Test Data", xlabel=name * "NTU [-]", ylabel="Effectiveness [-]", markersize=2)
 
-savefig(pScatter, "Images/Scatter_eNTU.pdf")
+    savefig(pScatter, "Images/Scatter_e" * name * ".pdf")
+end
+
+function plotScatter3D(name1, name2, index1, index2, X, Y, X_T, Y_T)
+    pScatter = plot(title="Effectiveness-" * name, dp=1000)
+
+    scatter!(X[index1, :], X[index2, :], Y, label="Train Data", xlabel=name1 * " [-]", ylabel=name2 * " [-]", zlabel="Effectiveness [-]", markersize=2)
+    scatter!(X_T[index1, :], X_T[index2, :], Y_T, label="Test Data", xlabel=name1 * "NTU [-]", ylabel=name2 * " [-]", zlabel="Effectiveness [-]", markersize=2)
+
+    savefig(pScatter, "Images/Scatter_e" * name1 * name2 * ".pdf")
+end
+
+
+plotScatter("Tau", 1, dotsX, dotsY, dotsX_test, dotsY_test)
+plotScatter("Cr", 2, dotsX, dotsY, dotsX_test, dotsY_test)
+plotScatter("NTU", 3, dotsX, dotsY, dotsX_test, dotsY_test)
+
+plotScatter3D("Tau", "Cr", 1, 2, dotsX, dotsY, dotsX_test, dotsY_test)
+plotScatter3D("Cr", "NTU", 2, 3, dotsX, dotsY, dotsX_test, dotsY_test)
+plotScatter3D("Tau", "NTU", 1, 3, dotsX, dotsY, dotsX_test, dotsY_test)
+
 
 include("HTSR.jl");
 
 using SymbolicRegression
 using SymbolicUtils
 using .HTSR
+
+function saveTrees(var, trees, n::Integer, path, suffix="")
+    save_object(format(path, var.name, n, "Trees" * suffix), trees)
+end
+function loadTrees(var, n::Integer, path, suffix="")
+    return load_object(format(path, var.name, n, "Trees" * suffix))
+end
+function existTrees(var, n::Integer, path, suffix="")
+    return isfile(format(path, var.name, n, "Trees" * suffix))
+end
 
 inv(x) = 1 / x
 options = Options(
@@ -74,4 +105,4 @@ data_Test = Data(dotsX_test, dotsY_test)
 
 trees, complexity = calculateSR(data, 1024, options)
 
-saveTrees(input, (trees, complexity), n, dataPath, "Exact")
+saveTrees(var3, (trees, complexity), n, dataPath)
