@@ -103,6 +103,8 @@ const var3 = (name="Case3", variables=Dict(reverse.(enumerate([:ϵ :NTU :Cr :τ]
 data = Data(dotsX, dotsY)
 data_Test = Data(dotsX_test, dotsY_test)
 
-trees, complexity = calculateSR(data, 1024, options)
+n = 1024
+
+trees, complexity = calculateSR(data, n, options)
 
 saveTrees(var3, (trees, complexity), n, dataPath)
