@@ -51,7 +51,7 @@ function plotScatter(name, index, X, Y, X_T, Y_T)
 end
 
 function plotScatter3D(name1, name2, index1, index2, X, Y, X_T, Y_T)
-    pScatter = plot(title="Effectiveness-" * name, dp=1000)
+    pScatter = plot(title="Effectiveness-" * name1 * "-" * name2, dp=1000)
 
     scatter!(X[index1, :], X[index2, :], Y, label="Train Data", xlabel=name1 * " [-]", ylabel=name2 * " [-]", zlabel="Effectiveness [-]", markersize=2)
     scatter!(X_T[index1, :], X_T[index2, :], Y_T, label="Test Data", xlabel=name1 * "NTU [-]", ylabel=name2 * " [-]", zlabel="Effectiveness [-]", markersize=2)
