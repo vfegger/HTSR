@@ -75,6 +75,11 @@ using SymbolicRegression
 using SymbolicUtils
 using .HTSR
 
+
+function format(path, name, n, suffix)
+    return path * name * "_" * string(n) * suffix * ".jdl"
+end
+
 function saveTrees(var, trees, n::Integer, path, suffix="")
     save_object(format(path, var.name, n, "Trees" * suffix), trees)
 end
