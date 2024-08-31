@@ -75,6 +75,8 @@ using SymbolicRegression
 using SymbolicUtils
 using .HTSR
 
+using JLD2
+
 
 function format(path, name, n, suffix)
     return path * name * "_" * string(n) * suffix * ".jdl"
