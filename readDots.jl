@@ -77,7 +77,6 @@ using .HTSR
 
 using JLD2
 
-
 function format(path, name, n, suffix)
     return path * name * "_" * string(n) * suffix * ".jdl"
 end
@@ -98,9 +97,9 @@ options = Options(
     unary_operators=(inv, -, log, exp),
     batching=true,
     ncyclesperiteration=512,
-    maxsize=30,
-    populations=50,
-    population_size=75
+    maxsize=40,
+    populations=100,
+    population_size=150
 )
 
 
