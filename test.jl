@@ -166,6 +166,8 @@ end
 
 function noiseRun(input, n::Integer, options)
 
+    println("Noise Run")
+
     if existTrees(input, n, dataPath, "Exact") && existTrees(input, n, dataPath, "Noise1") && existTrees(input, n, dataPath, "Noise01") && existTrees(input, n, dataPath, "Noise001")
         data = loadData(input, n, dataPath, "")
         dataTest = loadData(input, ntest, dataPath, "Test")
@@ -188,9 +190,13 @@ function noiseRun(input, n::Integer, options)
         saveTrees(input, (trees_noise_001, complexity_noise_001), n, dataPath, "Noise001")
     end
 
+    println("Exact, n = " * string(n))
     trees_exact, complexity_exact = loadTrees(input, n, dataPath, "Exact")
+    println("Noise 1%, n = " * string(n))
     trees_noise_1, complexity_noise_1 = loadTrees(input, n, dataPath, "Noise1")
+    println("Exact 0.1%, n = " * string(n))
     trees_noise_01, complexity_noise_01 = loadTrees(input, n, dataPath, "Noise01")
+    println("Noise 0.01, n = " * string(n))
     trees_noise_001, complexity_noise_001 = loadTrees(input, n, dataPath, "Noise001")
 
     return plotNoiseDep([

@@ -41,18 +41,22 @@ function loadTrees(var, n::Integer, path, suffix="")
     return load_object(format(path, var.name, n, "Trees" * suffix))
 end
 
-var = var1
+function plotHeatmap(var, n::Integer, resolution::Integer)
 
-trees, complexity = loadTrees(var, 1600, "Data/")
+    trees, complexity = loadTrees(var, 1600, "Data/")
 
-resolution = 100
-X = Array{Float64,2}(undef, length(var.variables), resolution^length(var.variables))
-values = [range(var.range[s].min, var.range[s].max, resolution) for s in keys(var.variables)]
-combination = collect(IterTools.product(values...))
-for i in 1:resolution^length(var.variables)
-    X[:, i] .= combination[i]
+    X = Array{Float64,2}(undef, length(var.variables), resolution^length(var.variables))
+    values = [range(var.range[s].min, var.range[s].max, resolution) for s in keys(var.variables)]
+    combination = collect(IterTools.product(values...))
+    for i in 1:resolution^length(var.variables)
+        X[:, i] .= combination[i]
+    end
+
+    Y = [reshape(eval_tree_array(tree, X, options)[1], (resolution, resolution)) for tree in trees]
+    z = reshape(var.op.(X[1, :], X[2, :]), (resolution, resolution))
+
+    pltResult = [heatmap(values[1], values[2], y) for y in Y]
+    pltExact = heatmap(values[1], values[2], z)
+
+    return pltResult, pltExact
 end
-
-Y = reshape(eval_tree_array(trees[8], X, options)[1], (resolution, resolution))
-Z = reshape(var.op.(X[1, :], X[2, :]), (resolution, resolution))
-heatmap(values[1], values[2], Z-Y)
