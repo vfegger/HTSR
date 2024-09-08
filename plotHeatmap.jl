@@ -57,6 +57,7 @@ function plotHeatmap(var, n::Integer, resolution::Integer)
 
     pltResult = [heatmap(values[1], values[2], y) for y in Y]
     pltExact = heatmap(values[1], values[2], z)
+    pltResidue = [heatmap(values[1], values[2], y - z) for y in Y]
 
-    return pltResult, pltExact
+    return pltResult, pltExact, pltResidue
 end

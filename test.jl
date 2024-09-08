@@ -44,7 +44,7 @@ if !isdir(imagePath)
     mkdir(imagePath)
 end
 
-const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0e2, 5.0e5), :Pr => Uniform(0.5e0, 100.0e0)]), op=((Re::Number, Pr::Number) -> 0.663e0 * Re^(1.0e0 / 2.0e0) * Pr^(1.0f0 / 3.0f0)))
+const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), sampler=Dict([:Re => Uniform(1.0e2, 5.0e5), :Pr => Uniform(1e0, 100.0e0)]), op=((Re::Number, Pr::Number) -> 0.664e0 * Re^(1.0e0 / 2.0e0) * Pr^(1.0f0 / 3.0f0)))
 const var2 = (name="Case2", variables=Dict(reverse.(enumerate([:Ra :Pr]))), sampler=Dict([:Ra => Uniform(1.0e2, 1.0e8), :Pr => Uniform(0.5e0, 100.0e0)]), op=((Ra::Number, Pr::Number) -> 0.677e0 * ((2.0e1 / (2.1e1 * Pr)) + 1.0e0)^(-1.0e0 / 4.0e0) * Ra^(1.0e0 / 4.0e0)))
 const var3 = (name="Case3", variables=Dict(reverse.(enumerate([:ϵ :NTU]))), sampler=nothing, op=nothing)
 
