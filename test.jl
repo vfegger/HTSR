@@ -167,10 +167,10 @@ end
 function noiseRun(input, n::Integer, options)
 
     println("Noise Run")
+    dataTest = loadData(input, ntest, dataPath, "Test")
 
     if !existTrees(input, n, dataPath, "Exact") || !existTrees(input, n, dataPath, "Noise1") || !existTrees(input, n, dataPath, "Noise01") || !existTrees(input, n, dataPath, "Noise001")
         data = loadData(input, n, dataPath, "")
-        dataTest = loadData(input, ntest, dataPath, "Test")
         data_noise_1 = deepcopy(data)
         data_noise_01 = deepcopy(data)
         data_noise_001 = deepcopy(data)
