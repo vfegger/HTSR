@@ -18,7 +18,7 @@ using LaTeXStrings
 using Glob
 using JLD2
 
-const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), range=Dict([(:Re, (min=1.0e2, max=5.0e5)), (:Pr, (min=0.5e0, max=1.0e2))]), op=((Re::Number, Pr::Number) -> 0.663e0 * Re^(1.0e0 / 2.0e0) * Pr^(1.0f0 / 3.0f0)))
+const var1 = (name="Case1", variables=Dict(reverse.(enumerate([:Re :Pr]))), range=Dict([(:Re, (min=1.0e2, max=5.0e5)), (:Pr, (min=1.0e0, max=1.0e2))]), op=((Re::Number, Pr::Number) -> 0.664e0 * Re^(1.0e0 / 2.0e0) * Pr^(1.0f0 / 3.0f0)))
 const var2 = (name="Case2", variables=Dict(reverse.(enumerate([:Ra :Pr]))), range=Dict([(:Ra, (min=1.0e2, max=1.0e8)), (:Pr, (min=0.5e0, max=1.0e2))]), op=((Ra::Number, Pr::Number) -> 0.677e0 * ((2.0e1 / (2.1e1 * Pr)) + 1.0e0)^(-1.0e0 / 4.0e0) * Ra^(1.0e0 / 4.0e0)))
 const var3 = (name="Case3", variables=Dict(reverse.(enumerate([:ϵ :NTU]))), range=nothing, op=nothing)
 
