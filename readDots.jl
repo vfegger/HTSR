@@ -7,7 +7,7 @@ Pkg.instantiate();
 
 using FileIO;
 using Plots;
-
+using LaTeXStrings;
 # {"\[Tau]dwTot", "CrsTot", "NTUhRef", "\[Epsilon]Sol"}
 
 dotsFile = open("Dots.sdt")
@@ -44,8 +44,14 @@ end
 function plotScatter(name, index, X, Y, X_T, Y_T)
     pScatter = plot(title="Effectiveness-" * name, dp=1000)
 
+    if name == "Cr"
+        name = L"C_{r,0.5}"
+    end
     scatter!(X[index, :], Y, label="Train Data", xlabel=name * " [-]", ylabel="Effectiveness [-]", markersize=2)
     scatter!(X_T[index, :], Y_T, label="Test Data", xlabel=name * " [-]", ylabel="Effectiveness [-]", markersize=2)
+    if name == L"C_{r,0.5}"
+        name = "Cr"
+    end
 
     savefig(pScatter, "Images/Scatter_e" * name * ".pdf")
 end
@@ -68,6 +74,7 @@ plotScatter3D("Tau", "Cr", 1, 2, dotsX, dotsY, dotsX_test, dotsY_test)
 plotScatter3D("Cr", "NTU", 2, 3, dotsX, dotsY, dotsX_test, dotsY_test)
 plotScatter3D("Tau", "NTU", 1, 3, dotsX, dotsY, dotsX_test, dotsY_test)
 
+exit()
 
 include("HTSR.jl");
 
